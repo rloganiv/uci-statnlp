@@ -1,4 +1,5 @@
 #!/bin//python
+
 from feats import Feats
 import scipy.sparse
 import numpy as np
@@ -29,25 +30,29 @@ class Tagger:
 
     def evaluate_data(self, sents, labels):
         """Evaluates the tagger on the given corpus of sentences and the set of true labels."""
+        import warnings
+        warnings.simplefilter("ignore", DeprecationWarning)
         preds = self.tag_data(sents)
         assert len(preds) == len(labels)
         # Compute tokenwise predictions and labels
         all_preds = []
         all_labels = []
-        for i in xrange(len(preds)):
+        for i in range(len(preds)):
             assert len(preds[i]) == len(labels[i])
             for p in preds[i]:
                 all_preds.append(p)
             for l in labels[i]:
                 all_labels.append(l)
-        import warnings
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            print "Token-wise accuracy", accuracy_score(all_labels, all_preds)*100
-            print "Token-wise F1 (macro)", f1_score(all_labels, all_preds, average='macro')*100
-            print "Token-wise F1 (micro)", f1_score(all_labels, all_preds, average='micro')*100
-            print "Sentence-wise accuracy", accuracy_score(map(lambda ls: ''.join(ls), labels), map(lambda ls: ''.join(ls), preds))*100
-            print classification_report(all_labels, all_preds)
+        print("Token-wise accuracy", accuracy_score(all_labels, all_preds)*100)
+        print("Token-wise F1 (macro)", f1_score(all_labels, all_preds, average='macro')*100)
+        print("Token-wise F1 (micro)", f1_score(all_labels, all_preds, average='micro')*100)
+        print("Sentence-wise accuracy",
+              accuracy_score(
+                  list(map(lambda ls: ''.join(ls), labels)),
+                  list(map(lambda ls: ''.join(ls), preds)))*100)
+
+        print(classification_report(all_labels, all_preds))
+
         return preds
 
 class LogisticRegressionTagger(Tagger):
@@ -58,8 +63,8 @@ class LogisticRegressionTagger(Tagger):
     """
     def __init__(self, feats = Feats()):
         self.feats = feats
-    	from sklearn.linear_model import LogisticRegression
-    	self.cls = LogisticRegression()
+        from sklearn.linear_model import LogisticRegression
+        self.cls = LogisticRegression()
         from sklearn import preprocessing
         self.le = preprocessing.LabelEncoder()
 
@@ -70,7 +75,7 @@ class LogisticRegressionTagger(Tagger):
         output: predicted labels as a list of string.
         """
         fvs = []
-        for i in xrange(len(sent)):
+        for i in range(len(sent)):
             fidxs = self.feats.token2fidxs(sent, i)
             fv = self.idxs2featurevector(fidxs)
             fvs.append(fv)
@@ -102,11 +107,13 @@ class LogisticRegressionTagger(Tagger):
         # transform it to a list of classes
         # size N (number of total tokens)
         y = self.le.fit_transform(all_labels)
-        print y.shape
+        print(y.shape)
+
         # get the feature indices
         # list of size N (number of total tokens)
         Xidxs = self.feats.index_data(sents)
-        print "Features computed"
+        print("Features computed")
+
         # convert to feature vectors
         # list of size N
         Xfeats = []
@@ -117,7 +124,8 @@ class LogisticRegressionTagger(Tagger):
         # of size NxD, where D is the total number of features
         assert len(Xfeats) == len(all_labels)
         X = scipy.sparse.vstack(Xfeats)
-        print X.shape
+        print(X.shape)
+
         # train the classifier
         self.cls.fit(X,y)
 
@@ -152,7 +160,7 @@ class CRFPerceptron(Tagger):
         """Calls viterbi code to find the best tags for a sentence."""
         # Compute the features for the sentence
         Xidxs = []
-        for i in xrange(len(sent)):
+        for i in range(len(sent)):
             fidxs = self.feats.token2fidxs(sent, i)
             Xidxs.append(fidxs)
         # All the inference code
@@ -205,11 +213,11 @@ class CRFPerceptron(Tagger):
         # final_trans
         fv[0,self.get_end_trans_idx(ys[-1])] = 1
         # intermediate transitions
-        for i in xrange(1, len(ys)):
+        for i in range(1, len(ys)):
             tidx = self.get_trans_idx(ys[i-1], ys[i])
             fv[0,tidx] = fv[0,tidx] + 1
         # features
-        for i in xrange(len(ys)):
+        for i in range(len(ys)):
             X = Xs[i]
             y = ys[i]
             for c in X:
@@ -229,19 +237,23 @@ class CRFPerceptron(Tagger):
         y = []
         for ls in labels:
             y.append(self.le.transform(ls))
-        print "Classes:", len(self.le.classes_), self.le.classes_
+        print("Classes:", len(self.le.classes_), self.le.classes_)
+
         # compute all the token features, store as seq of seq of feature indices
         # i.e. each token has a list of feature indices
         Xidxs = self.feats.index_data(sents)
         assert len(Xidxs) == len(y)
-        print len(Xidxs), self.feats.num_features
+        print(len(Xidxs), self.feats.num_features)
+
 
         # train
         self.num_classes = len(self.le.classes_)
         L = self.num_classes
         self.size_joint_feature = 2*L + L*L + L*self.feats.num_features
-        print "Number of weights",self.size_joint_feature
-        print "Starting training"
+        print("Number of weights",self.size_joint_feature)
+
+        print("Starting training")
+
         # profiling code below, in case code is incredibly slow
         # import cProfile, pstats, StringIO
         # pr = cProfile.Profile()
@@ -272,14 +284,14 @@ class CRFPerceptron(Tagger):
         trans_scores = np.zeros((L,L))
         emission_scores = np.zeros((N,L))
         # fill the above arrays for the weight vector
-        for j in xrange(L):
+        for j in range(L):
             start_scores[j] = w[0,self.get_start_trans_idx(j)]
             end_scores[j] = w[0,self.get_end_trans_idx(j)]
             # transition
-            for k in xrange(L):
+            for k in range(L):
                 trans_scores[j][k] = w[0,self.get_trans_idx(j, k)]
             # emission
-            for i in xrange(N):
+            for i in range(N):
                 score = 0.0
                 for fidx in X[i]:
                     score += w[0,self.get_ftr_idx(fidx, j)]
@@ -291,7 +303,7 @@ class CRFPerceptron(Tagger):
     def loss(self, yhat, y):
         """Tokenwise 0/1 loss, for printing and evaluating during training."""
         tot = 0.0
-        for i in xrange(len(y)):
+        for i in range(len(y)):
             if yhat[i] != y[i]:
                 tot += 1.0
         return tot

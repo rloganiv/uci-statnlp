@@ -1,4 +1,5 @@
 #!/bin/python
+
 def read_twitter(dname="ner"):
     """Read the twitter train, dev, and test data from the default location.
 
@@ -13,9 +14,12 @@ def read_twitter(dname="ner"):
     # Following is commented, only useful once test data is available.
     # data.test_sents, data.test_labels = read_file("data/twitter_test." + dname)
     # print statistics
-    print "Twitter %s data loaded." % dname
-    print ".. # train sents", len(data.train_sents)
-    print ".. # dev sents", len(data.dev_sents)
+    print("Twitter %s data loaded." % dname)
+
+    print(".. # train sents", len(data.train_sents))
+
+    print(".. # dev sents", len(data.dev_sents))
+
     # print ".. # test sents", len(data.test_sents)
     return data
 
@@ -37,7 +41,7 @@ def read_file(filename):
                     curr_labels = []
             else:
                 token, label = line.split()
-                curr_sent.append(unicode(token, 'utf-8'))
+                curr_sent.append(str(token))
                 curr_labels.append(label)
     return sents, labels
 
@@ -46,14 +50,14 @@ def write_preds(fname, sents, labels, preds):
     f = open(fname, "w")
     assert len(sents) == len(labels)
     assert len(sents) == len(preds)
-    for i in xrange(len(sents)):
+    for i in range(len(sents)):
         write_sent(f, sents[i], labels[i], preds[i])
     f.close()
 
 def write_sent(f, toks, labels, pred = None):
     """Writes the output of a sentence in CONLL format, including predictions (if pred is not None)"""
-    for i in xrange(len(toks)):
-        f.write(toks[i].encode('utf-8') + "\t" + labels[i])
+    for i in range(len(toks)):
+        f.write(toks[i] + "\t" + labels[i])
         if pred is not None:
             f.write("\t" + pred[i])
         f.write("\n")
@@ -68,7 +72,7 @@ def file_splitter(all_file, train_file, dev_file):
     seed = 0
     dev_prop = 0.25
     rnd = random.Random(seed)
-    for i in xrange(len(all_sents)):
+    for i in range(len(all_sents)):
         if rnd.random() < dev_prop:
             write_sent(dev_f, all_sents[i], all_labels[i])
         else:
@@ -118,11 +122,13 @@ if __name__ == "__main__":
     tagger.fit_data(data.train_sents, data.train_labels)
 
     # Evaluation (also writes out predictions)
-    print "### Train evaluation"
+    print("### Train evaluation")
+
     data.train_preds = tagger.evaluate_data(data.train_sents, data.train_labels)
     write_preds("data/twitter_train.%s.pred" % dname,
         data.train_sents, data.train_labels, data.train_preds)
-    print "### Dev evaluation"
+    print("### Dev evaluation")
+
     data.dev_preds = tagger.evaluate_data(data.dev_sents, data.dev_labels)
     write_preds("data/twitter_dev.%s.pred" % dname, 
         data.dev_sents, data.dev_labels, data.dev_preds)

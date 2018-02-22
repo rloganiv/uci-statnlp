@@ -37,7 +37,8 @@ class Feats:
             self.fmap[ftr] = fidx
             self.feats.append(ftr)
             if self.num_features % 1000 == 0:
-                print "--", self.num_features, "features added."
+                print("--", self.num_features, "features added.")
+
             self.num_features = len(self.feats)
         return self.fmap[ftr]
 
@@ -75,7 +76,7 @@ class Feats:
     def index_sent(self, sent):
         """Compute and index the features of a single sentence."""
         sentIdxs = []
-        for i in xrange(len(sent)):
+        for i in range(len(sent)):
             tokIdxs = []
             ftrs = self.token2features(sent, i)
             for ftr in ftrs:

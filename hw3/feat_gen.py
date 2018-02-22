@@ -41,7 +41,7 @@ def token2features(sent, i, add_neighs = True):
         ftrs.append("SENT_END")
 
     # the word itself
-    word = unicode(sent[i])
+    word = str(sent[i])
     ftrs.append("WORD=" + word)
     ftrs.append("LCASE=" + word.lower())
     # some features of the word
@@ -75,4 +75,5 @@ if __name__ == "__main__":
     preprocess_corpus(sents)
     for sent in sents:
         for i in xrange(len(sent)):
-            print sent[i], ":", token2features(sent, i)
+            print(sent[i], ":", token2features(sent, i))
+
